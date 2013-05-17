@@ -54,6 +54,7 @@ struct cpufreq_darkness_cpuinfo {
 	 */
 	struct mutex timer_mutex;
 };
+
 /*
  * mutex that serializes governor limit change with
  * do_darkness_timer invocation. We do not want do_darkness_timer to run
