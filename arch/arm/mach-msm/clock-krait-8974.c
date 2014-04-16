@@ -459,7 +459,13 @@ static void get_krait_bin_format_b(struct platform_device *pdev,
 	}
 	
 #ifdef CONFIG_CPU_OC
-    *speed = 1;
+#ifdef CONFIG_CPU_OC_ULTIMATE
+    *speed = 3;
+    dev_info(&pdev->dev, "Androguide: Forcing CPU OC ULTIMATE!\n");
+#else
+	*speed = 1;
+    dev_info(&pdev->dev, "Androguide: Forcing CPU OC!\n");
+#endif
 #endif
 
 	/* Check SPEED_BIN_BLOW_STATUS */
@@ -480,7 +486,6 @@ static void get_krait_bin_format_b(struct platform_device *pdev,
 	}
 
 	dev_info(&pdev->dev, "PVS version: %d\n", *pvs_ver);
-
 	devm_iounmap(&pdev->dev, base);
 }
 
