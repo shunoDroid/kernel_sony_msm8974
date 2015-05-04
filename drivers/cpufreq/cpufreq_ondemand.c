@@ -174,14 +174,30 @@ static struct dbs_tuners {
 	.boost_duration = DEF_BOOSTED_DURATION,
 };
 
-static inline cputime64_t get_cpu_iowait_time(unsigned int cpu, cputime64_t *wall)
+struct timer_list inp_filter_timer;
+
+static inline unsigned int get_sampling_rate(void)
 {
-	u64 iowait_time = get_cpu_iowait_time_us(cpu, wall);
+	if (boost_flag)
+		return dbs_tuners_ins.boosted_sampling_rate;
+	else
+		return dbs_tuners_ins.sampling_rate;
+}
 
-	if (iowait_time == -1ULL)
-		return 0;
-
-	return iowait_time;
+static void dbs_reset_sample(struct cpu_dbs_info_s *p_dbs_info)
+{
+	int delay = usecs_to_jiffies(get_sampling_rate());
+	p_dbs_info->prev_cpu_idle = get_cpu_idle_time(p_dbs_info->cpu,
+				&p_dbs_info->prev_cpu_wall, 0);
+	p_dbs_info->prev_cpu_iowait = get_cpu_iowait_time(p_dbs_info->cpu,
+				&p_dbs_info->prev_cpu_wall);
+	/* cancel the next ondemand sample */
+	cancel_delayed_work_sync(&p_dbs_info->work);
+	/* reschedule the next ondemand sample */
+	mutex_lock(&p_dbs_info->timer_mutex);
+	queue_delayed_work_on(p_dbs_info->cpu, dbs_wq,
+			      &p_dbs_info->work, delay);
+	mutex_unlock(&p_dbs_info->timer_mutex);
 }
 
 static void dbs_reset_sample(struct cpu_dbs_info_s *p_dbs_info)
